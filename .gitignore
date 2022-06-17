@@ -1,0 +1,35 @@
+# OS X
+.DS_Store
+Thumbs.db
+
+# Temporary and backup files
+*~
+*~.*
+*.bak
+*.bak.*
+
+# VSCode
+.vscode/
+
+# Explicitly excluded from version control
+*.vcignore
+*.vcignore.*
+
+# Misc.
+*.class
+*.log
+*.log.*
+*.py[co]
+*.zip
+
+# Node.js
+node_modules/
+
+.gradle/
+.idea/
+build/
+target/
+
+# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
+hs_err_pid*
+replay_pid*
