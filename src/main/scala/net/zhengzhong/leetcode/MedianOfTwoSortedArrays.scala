@@ -1,5 +1,9 @@
 package net.zhengzhong.leetcode
 
+/**
+ * 4. Median of Two Sorted Arrays
+ * https://leetcode.com/problems/median-of-two-sorted-arrays/
+ */
 object MedianOfTwoSortedArrays {
 
   def findMedianSortedArrays(nums1: Array[Int], nums2: Array[Int]): Double = {
