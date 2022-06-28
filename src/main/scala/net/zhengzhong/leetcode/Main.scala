@@ -7,17 +7,21 @@ import scala.util.matching.Regex
 
 object Main {
 
+  // Relative source directory used to build relative link in `README.md`.
+  // See: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-readmes#relative-links-and-image-paths-in-readme-files
+  val RelSourceDir: String = "src/main/scala/" + getClass.getPackage.getName.replace('.', '/')
+
   case class Problem(id: Int, title: String, url: String, filename: String) {
-    def formatTitleAndSource(titleWidth: Int, sourceWidth: Int): (String, String) = {
-      val titleMarkdown = s"[$id. $title]($url)".padTo(titleWidth, " ").mkString
-      val adjustedSourceWidth = sourceWidth - max(titleMarkdown.length - titleWidth, 0)
-      val sourceMarkdown = s"`$filename`".padTo(adjustedSourceWidth, " ").mkString
+    def formatMarkdown(width: Int): (String, String) = {
+      val titleMarkdown = s"[$id. $title]($url)".padTo(width, " ").mkString
+      val adjustedSourceWidth = width - max(titleMarkdown.length - width, 0)
+      val sourceMarkdown = s"[`$filename`]($RelSourceDir/$filename)".padTo(adjustedSourceWidth, " ").mkString
       (titleMarkdown, sourceMarkdown)
     }
   }
 
-  val headingPattern: Regex = "^(\\d+)\\.(.+)$".r
-  val urlPattern: Regex = "^(https://leetcode.com/problems/[\\w\\-]+/)$".r
+  val HeadingPattern: Regex = "^(\\d+)\\.(.+)$".r
+  val UrlPattern: Regex = "^(https://leetcode.com/problems/[\\w\\-]+/)$".r
 
   def loadProblem(file: File): Option[Problem] = {
     val source = Source.fromFile(file)
@@ -27,8 +31,8 @@ object Main {
       .map(_.trim.stripPrefix("*").trim)
 
     val props: Map[String, String] = comments.map { line =>
-      val headingMatch = headingPattern.findFirstMatchIn(line)
-      val urlMatch = urlPattern.findFirstMatchIn(line)
+      val headingMatch = HeadingPattern.findFirstMatchIn(line)
+      val urlMatch = UrlPattern.findFirstMatchIn(line)
       (headingMatch, urlMatch) match {
         case (Some(m), None) => Map("id" -> m.group(1), "title" -> m.group(2).trim)
         case (None, Some(m)) => Map("url" -> m.group(1).trim)
@@ -51,27 +55,26 @@ object Main {
     if (args.length != 1) {
       throw new IllegalArgumentException("Invalid arguments.")
     }
-    val dir = new File(args(0))
-    if (!dir.isDirectory) {
-      throw new IllegalArgumentException(s"Invalid directory: $dir")
+    val sourceDir = new File(args(0), RelSourceDir)
+    if (!sourceDir.isDirectory) {
+      throw new IllegalArgumentException(s"Invalid source directory: $sourceDir")
     }
-    val sourceFiles = dir.listFiles().filter { file =>
+    val sourceFiles = sourceDir.listFiles().filter { file =>
       file.isFile && file.getName.endsWith(".scala") && file.getName != "Main.scala"
     }.toList
     val problems: List[Problem] = sourceFiles.flatMap(loadProblem).sortBy(_.id)
 
-    val titleWidth = 100
-    val sourceWidth = 40
+    val cellWidth = 100
     val rows = List(
       (
-        "Problem".padTo(titleWidth, " ").mkString,
-        "Source Code".padTo(sourceWidth, " ").mkString,
+        "Problem".padTo(cellWidth, " ").mkString,
+        "Source Code".padTo(cellWidth, " ").mkString,
       ),
       (
-        "".padTo(titleWidth, "-").mkString,
-        "".padTo(sourceWidth, "-").mkString,
+        "".padTo(cellWidth, "-").mkString,
+        "".padTo(cellWidth, "-").mkString,
       ),
-    ) ++ problems.map(_.formatTitleAndSource(titleWidth, sourceWidth))
+    ) ++ problems.map(_.formatMarkdown(cellWidth))
     for (row <- rows) {
       println(s"| ${row._1} | ${row._2} |")
     }
