@@ -1,8 +1,9 @@
 package net.zhengzhong.leetcode
 
-import java.io.File
+import java.io.{File, PrintWriter}
 import scala.io.Source
 import scala.math.max
+import scala.util.{Failure, Success, Try, Using}
 import scala.util.matching.Regex
 
 object Main {
@@ -51,11 +52,59 @@ object Main {
     problem
   }
 
+  def updateIndex(file: File, content: String): Unit = {
+    val outputFile = new File(file.getParentFile, file.getName + ".temp") // Temporary File
+
+    val status: Try[Unit] = Using.Manager { use =>
+      val source = use(Source.fromFile(file))
+      val writer = use(new PrintWriter(outputFile))
+
+      var insideIndex: Boolean = false
+      var indexUpdated: Boolean = false
+      for (line <- source.getLines()) {
+        if (!insideIndex) {
+          writer.println(line)
+          if (line.trim == "<!--- INDEX:BEGIN -->") {
+            insideIndex = true
+            writer.println()
+            writer.println(content)
+            writer.println()
+            indexUpdated = true
+          }
+        } else {
+          if (line.trim == "<!--- INDEX:END -->") {
+            insideIndex = false
+            writer.println(line)
+          }
+        }
+      }
+
+      if (insideIndex || !indexUpdated) {
+        throw new RuntimeException(s"Index section not found in: $file")
+      }
+    }
+
+    status match {
+      case Success(_) =>
+        outputFile.renameTo(file)
+      case Failure(e) =>
+        println(s"Error: $e")
+        outputFile.delete()
+        throw e
+    }
+  }
+
   def main(args: Array[String]): Unit = {
     if (args.length != 1) {
       throw new IllegalArgumentException("Invalid arguments.")
     }
-    val sourceDir = new File(args(0), RelSourceDir)
+
+    val projectDir = new File(args(0))
+    if (!projectDir.isDirectory) {
+      throw new IllegalArgumentException(s"Invalid project directory: $projectDir")
+    }
+
+    val sourceDir = new File(projectDir, RelSourceDir)
     if (!sourceDir.isDirectory) {
       throw new IllegalArgumentException(s"Invalid source directory: $sourceDir")
     }
@@ -65,7 +114,8 @@ object Main {
     val problems: List[Problem] = sourceFiles.flatMap(loadProblem).sortBy(_.id)
 
     val cellWidth = 100
-    val rows = List(
+    // Each row contains two cells.
+    val indexRows: List[(String, String)] = List(
       (
         "Problem".padTo(cellWidth, " ").mkString,
         "Source Code".padTo(cellWidth, " ").mkString,
@@ -75,8 +125,13 @@ object Main {
         "".padTo(cellWidth, "-").mkString,
       ),
     ) ++ problems.map(_.formatMarkdown(cellWidth))
-    for (row <- rows) {
-      println(s"| ${row._1} | ${row._2} |")
+    val indexContent = indexRows.map(row => s"| ${row._1} | ${row._2} |").mkString("\n")
+
+    val readmeFile = new File(projectDir, "README.md")
+    if (!readmeFile.isFile) {
+      throw new IllegalArgumentException(s"Invalid project README file: $readmeFile")
     }
+
+    updateIndex(readmeFile, indexContent)
   }
 }

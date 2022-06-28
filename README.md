@@ -9,6 +9,8 @@ To build the project and run unit tests:
 
 ## Problems and solutions
 
+<!--- INDEX:BEGIN -->
+
 | Problem                                                                                              | Source Code                                                                                          |
 | ---------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
 | [1. Two Sum](https://leetcode.com/problems/two-sum/)                                                 | [`TwoSum.scala`](src/main/scala/net/zhengzhong/leetcode/TwoSum.scala)                                |
@@ -43,3 +45,5 @@ To build the project and run unit tests:
 | [1143. Longest Common Subsequence](https://leetcode.com/problems/longest-common-subsequence/)        | [`LongestCommonSubsequence.scala`](src/main/scala/net/zhengzhong/leetcode/LongestCommonSubsequence.scala) |
 | [1642. Furthest Building You Can Reach](https://leetcode.com/problems/furthest-building-you-can-reach/) | [`FurthestBuilding.scala`](src/main/scala/net/zhengzhong/leetcode/FurthestBuilding.scala)         |
 | [1689. Partitioning Into Minimum Number Of Deci-Binary Numbers](https://leetcode.com/problems/partitioning-into-minimum-number-of-deci-binary-numbers/) | [`MinPartitions.scala`](src/main/scala/net/zhengzhong/leetcode/MinPartitions.scala) |
+
+<!--- INDEX:END -->
