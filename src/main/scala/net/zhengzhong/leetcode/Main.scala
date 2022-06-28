@@ -25,31 +25,37 @@ object Main {
   val UrlPattern: Regex = "^(https://leetcode.com/problems/[\\w\\-]+/)$".r
 
   def loadProblem(file: File): Option[Problem] = {
-    val source = Source.fromFile(file)
-    val comments = source.getLines().toList
-      .dropWhile(_.trim != "/**").drop(1)
-      .takeWhile(_.trim != "*/")
-      .map(_.trim.stripPrefix("*").trim)
+    val maybeProblem: Try[Problem] = Using(Source.fromFile(file)) { source =>
 
-    val props: Map[String, String] = comments.map { line =>
-      val headingMatch = HeadingPattern.findFirstMatchIn(line)
-      val urlMatch = UrlPattern.findFirstMatchIn(line)
-      (headingMatch, urlMatch) match {
-        case (Some(m), None) => Map("id" -> m.group(1), "title" -> m.group(2).trim)
-        case (None, Some(m)) => Map("url" -> m.group(1).trim)
-        case _ => Map[String, String]()
+      val comments = source.getLines()
+        .dropWhile(_.trim != "/**").drop(1)
+        .takeWhile(_.trim != "*/")
+        .map(_.trim.stripPrefix("*").trim)
+
+      val props: Map[String, String] = comments.map { line =>
+        val headingMatch = HeadingPattern.findFirstMatchIn(line)
+        val urlMatch = UrlPattern.findFirstMatchIn(line)
+        (headingMatch, urlMatch) match {
+          case (Some(m), None) => Map("id" -> m.group(1), "title" -> m.group(2).trim)
+          case (None, Some(m)) => Map("url" -> m.group(1).trim)
+          case _ => Map[String, String]()
+        }
+      }.foldLeft(Map.empty[String, String])(_ ++ _)
+
+      if (props.size != 3) {
+        throw new RuntimeException(s"Cannot find LeetCode problem for ${file.getName}")
       }
-    }.foldLeft(Map.empty[String, String])(_ ++ _)
 
-    val problem = if (props.size == 3)
-      Some(Problem(props("id").toInt, props("title"), props("url"), file.getName))
-    else {
-      println(s"Warning: Cannot find LeetCode problem for ${file.getName}")
-      None
+      Problem(props("id").toInt, props("title"), props("url"), file.getName)
     }
 
-    source.close()
-    problem
+    maybeProblem match {
+      case Success(problem) =>
+        Some(problem)
+      case Failure(e) =>
+        println(s"Warning: $e")
+        None
+    }
   }
 
   def updateIndex(file: File, content: String): Unit = {
